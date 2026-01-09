@@ -1,25 +1,131 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;700&display=swap');
+lucide.createIcons();
 
-body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-.mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+let isLoggedIn = false;
+let currentSymbol = 'BINANCE:BTCUSDT';
 
-/* Page States */
-.page { position: absolute; inset: 0; display: none; }
-.page.active { display: flex; }
+// --- NAVIGATION ---
+function navigate(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link, .tab-link').forEach(l => l.classList.remove('active'));
 
-/* Navigation Styling */
-.nav-link { color: #848e9c; transition: 0.2s; border-bottom: 2px solid transparent; padding-bottom: 1rem; }
-.nav-link.active { color: #fcd535; border-color: #fcd535; }
+    const targetPage = (pageId === 'spot' || pageId === 'perp') ? 'page-trade' : 'page-' + pageId;
+    document.getElementById(targetPage).classList.add('active');
+    
+    // UI Updates
+    if(pageId === 'spot') {
+        document.getElementById('nav-spot').classList.add('active');
+        document.getElementById('tab-spot').classList.add('active');
+        document.getElementById('pair-display').innerText = "BTC/USDT (SPOT)";
+        initTV('BINANCE:BTCUSDT');
+    } else if(pageId === 'perp') {
+        document.getElementById('nav-perp').classList.add('active');
+        document.getElementById('pair-display').innerText = "BTC/USDT (PERP)";
+        initTV('BINANCE:BTCUSDT.P');
+    } else {
+        document.getElementById('tab-wallet').classList.add('active');
+    }
+}
 
-.tab-link { display: flex; flex-direction: column; align-items: center; color: #848e9c; }
-.tab-link.active { color: #fcd535; }
+// --- TRADINGVIEW ---
+function initTV(symbol) {
+    if (currentSymbol === symbol && document.querySelector('iframe')) return;
+    currentSymbol = symbol;
+    
+    new TradingView.widget({
+        "autosize": true,
+        "symbol": symbol,
+        "interval": "15",
+        "timezone": "Etc/UTC",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "hide_side_toolbar": true,
+        "container_id": "tv_widget_container"
+    });
+}
 
-/* Order Book Depth Animation */
-.order-row { position: relative; display: flex; justify-content: space-between; padding: 2px 12px; height: 18px; }
-.depth-fill { position: absolute; right: 0; top: 0; bottom: 0; opacity: 0.15; z-index: 0; transition: width 0.4s ease-out; }
+// --- LOGIN LOGIC ---
+function toggleLogin(show) {
+    const modal = document.getElementById('login-modal');
+    const card = document.getElementById('modal-card');
+    if(show) {
+        modal.classList.remove('hidden');
+        setTimeout(() => card.classList.add('modal-show'), 10);
+    } else {
+        card.classList.remove('modal-show');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+}
 
-/* iPhone Notch/Home Bar Fixes */
-.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+function handleLogin() {
+    isLoggedIn = true;
+    toggleLogin(false);
+    document.getElementById('user-btn').innerText = "Jay_User_01";
+}
 
-/* Animation Classes */
-.modal-show { opacity: 1 !important; transform: scale(1) !important; }
+function attemptTrade() {
+    if(!isLoggedIn) toggleLogin(true);
+    else alert("Order Placed Successfully!");
+}
+
+// --- LIVE ORDER BOOK ---
+const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@aggTrade');
+ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    const p = parseFloat(d.p).toFixed(2);
+    const color = d.m ? 'text-red-500' : 'text-green-500';
+    
+    document.getElementById('ticker-top').innerText = p;
+    document.getElementById('ticker-top').className = `font-bold mono text-sm ${color}`;
+    document.getElementById('ticker-mid').innerText = p;
+    document.getElementById('ticker-mid').style.color = d.m ? '#f6465d' : '#0ecb81';
+};
+
+function updateBook() {
+    const row = (c) => `<div class="order-row z-10">
+        <span class="${c}">${(98000 + Math.random()*200).toFixed(1)}</span>
+        <span class="text-gray-400 z-10">${Math.random().toFixed(3)}</span>
+        <div class="depth-fill ${c.replace('text', 'bg')}" style="width: ${Math.random()*100}%"></div>
+    </div>`;
+    document.getElementById('asks').innerHTML = Array(15).fill(0).map(()=>row('text-red-500')).join('');
+    document.getElementById('bids').innerHTML = Array(15).fill(0).map(()=>row('text-green-500')).join('');
+}
+
+setInterval(updateBook, 1200);
+navigate('spot'); // Initial Load
+// --- DEPOSIT MODAL LOGIC ---
+function openDepositModal() {
+    if (!isLoggedIn) {
+        toggleLogin(true); // Must log in before depositing
+        return;
+    }
+    const modal = document.getElementById('deposit-modal');
+    modal.classList.remove('hidden');
+    // Re-trigger lucide icons for the 'x' and 'copy' inside the modal
+    lucide.createIcons();
+}
+
+function closeDepositModal() {
+    document.getElementById('deposit-modal').classList.add('hidden');
+}
+
+// Update navigate function to handle mobile wallet properly
+function navigate(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link, .tab-link').forEach(l => l.classList.remove('active'));
+
+    const targetId = (pageId === 'spot' || pageId === 'perp') ? 'page-trade' : 'page-' + pageId;
+    const targetPage = document.getElementById(targetId);
+    
+    if (targetPage) {
+        targetPage.classList.add('active');
+        // Logic to refresh chart if switching back to trade
+        if (pageId === 'spot' || pageId === 'perp') {
+            initTV(pageId === 'spot' ? 'BINANCE:BTCUSDT' : 'BINANCE:BTCUSDT.P');
+        }
+    }
+    
+    // Set Active State on Buttons
+    const btn = document.getElementById('nav-' + pageId) || document.getElementById('tab-' + pageId);
+    if (btn) btn.classList.add('active');
+}
