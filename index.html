@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JayAwesome Pro Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-[#0b0e11] text-[#eaecef]">
+
+    <nav class="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-[#121619] z-50">
+        <div class="flex items-center space-x-8">
+            <div class="flex items-center space-x-2 cursor-pointer" onclick="navigate('home')">
+                <div class="bg-yellow-500 p-1 rounded text-black"><i data-lucide="zap" class="w-5 h-5"></i></div>
+                <span class="font-bold tracking-tighter">JAYAWESOME <span class="text-yellow-500">PRO</span></span>
+            </div>
+            <div class="hidden md:flex space-x-6 text-sm font-medium">
+                <button onclick="navigate('spot')" class="nav-btn active" id="btn-spot">Spot</button>
+                <button onclick="navigate('perp')" class="nav-btn" id="btn-perp">Perpetuals</button>
+                <button onclick="navigate('wallet')" class="nav-btn" id="btn-wallet">Wallet</button>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button onclick="showLogin()" class="text-sm font-bold hover:text-yellow-500 transition">Log In</button>
+            <button class="bg-yellow-500 text-black px-4 py-1.5 rounded font-bold text-sm">Register</button>
+        </div>
+    </nav>
+
+    <div id="page-container" class="flex-1 relative overflow-hidden">
+        
+        <section id="page-home" class="page flex items-center justify-center">
+            <div class="bg-[#1e2329] p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-800">
+                <h2 class="text-2xl font-bold mb-6 text-center">Welcome Back</h2>
+                <div class="space-y-4">
+                    <input type="email" placeholder="Email" class="w-full bg-[#0b0e11] border border-gray-700 p-3 rounded outline-none focus:border-yellow-500">
+                    <input type="password" placeholder="Password" class="w-full bg-[#0b0e11] border border-gray-700 p-3 rounded outline-none focus:border-yellow-500">
+                    <button class="w-full bg-yellow-500 text-black font-bold py-3 rounded mt-4" onclick="navigate('spot')">Log In</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-trade" class="page hidden h-full flex flex-col lg:flex-row">
+            <aside class="hidden xl:flex w-64 border-r border-gray-800 flex-col bg-[#121619]">
+                <div id="market-list" class="flex-1 overflow-y-auto"></div>
+            </aside>
+
+            <div class="flex-1 flex flex-col min-w-0">
+                <div id="tradingview_widget" class="flex-1"></div>
+                <div class="h-32 border-t border-gray-800 bg-[#121619] hidden md:block">
+                    <canvas id="depthChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+
+            <aside class="w-full lg:w-72 border-l border-gray-800 flex flex-col bg-[#121619]">
+                <div id="order-book" class="flex-1 flex flex-col overflow-hidden text-[11px] mono">
+                    <div id="asks" class="flex-1 flex flex-col-reverse overflow-hidden"></div>
+                    <div class="p-2 text-center font-bold text-lg border-y border-gray-800 text-green-500" id="ticker-price">---</div>
+                    <div id="bids" class="flex-1 overflow-hidden"></div>
+                </div>
+                <div class="p-4 border-t border-gray-800 bg-[#1e2329]">
+                    <div class="flex gap-2 mb-3">
+                        <button class="flex-1 bg-green-500 py-2 rounded font-bold text-black text-sm">Buy</button>
+                        <button class="flex-1 bg-gray-700 py-2 rounded font-bold text-gray-400 text-sm">Sell</button>
+                    </div>
+                    <input type="text" placeholder="Price" class="w-full bg-[#0b0e11] border border-gray-700 p-2 rounded text-sm mb-2 outline-none">
+                    <button id="trade-btn" class="w-full bg-green-500 text-black font-bold py-2 rounded text-sm">Open Position</button>
+                </div>
+            </aside>
+        </section>
+
+        <section id="page-wallet" class="page hidden p-4 lg:p-10">
+            <div class="max-w-5xl mx-auto">
+                <h1 class="text-3xl font-bold mb-8">Fiat and Spot</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <div class="bg-[#1e2329] p-6 rounded-lg border border-gray-800">
+                        <p class="text-gray-500 text-sm">Estimated Balance</p>
+                        <h2 class="text-2xl font-bold mono">0.421890 BTC</h2>
+                        <p class="text-gray-400 text-xs">≈ $41,520.22</p>
+                    </div>
+                    </div>
+                <table class="w-full text-left bg-[#121619] rounded-lg overflow-hidden">
+                    <thead class="bg-[#1e2329] text-gray-500 text-xs uppercase">
+                        <tr><th class="p-4">Asset</th><th class="p-4">Total</th><th class="p-4">Available</th><th class="p-4">Action</th></tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        <tr class="border-b border-gray-800"><td class="p-4 font-bold">BTC</td><td class="p-4 mono">0.1200</td><td class="p-4 mono">0.1190</td><td class="p-4 text-yellow-500 cursor-pointer">Withdraw</td></tr>
+                        <tr class="border-b border-gray-800"><td class="p-4 font-bold">USDT</td><td class="p-4 mono">15,400.00</td><td class="p-4 mono">15,400.00</td><td class="p-4 text-yellow-500 cursor-pointer">Withdraw</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
